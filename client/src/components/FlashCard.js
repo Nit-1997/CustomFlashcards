@@ -14,7 +14,9 @@ class Flashcard extends Component {
     componentDidMount() {
         console.log("this props")
          console.log(this.props)
-        this.setState({currentWord : this.props.words[0]},()=>{
+        let randomIndex = Math.floor((Math.random() * this.props.words.length) + 0)
+        let randomWord = this.props.words[randomIndex]
+        this.setState({currentWord : randomWord},()=>{
             console.log(this.state)
         })
 
@@ -78,11 +80,11 @@ class Flashcard extends Component {
             )
 
             correctButton = (
-                <Button onClick={() => responseHandler(1)}>Correct</Button>
+                <Button onClick={() => responseHandler("correct")}>Correct</Button>
             )
 
             incorrectButton = (
-                <Button onClick={() => responseHandler(0)}>Incorrect</Button>
+                <Button onClick={() => responseHandler("incorrect")}>Incorrect</Button>
             )
 
         }

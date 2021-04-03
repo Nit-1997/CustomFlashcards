@@ -25,42 +25,49 @@ app.use(bodyParser.json({limit: "50mb"}));
 app.use(express.static(path.join(__dirname, "client", "build")));
 
 
-const handlePositiveResponse = async(wordObj)=>{
+var handlePositiveResponse = async(wordObj)=>{
     //take the word object , c++ , ciratio = c/i
     //update this object
     try{
-        words = await Word.find({"word" : wordObj.word})
-        oldWordObj = words[0]
-        newWordObj = {
+        console.log("entered positive")
+        let words = await Word.find({"word" : wordObj.word})
+        let oldWordObj = words[0]
+        let newWordObj = {
             word : oldWordObj.word,
             meaning : oldWordObj.meaning,
             correct : oldWordObj.correct +1 ,
             incorrect: oldWordObj.incorrect,
             ciratio: (oldWordObj.correct +1) / oldWordObj.incorrect
         }
-        updatedWord = await Word.findByIdAndUpdate(oldWordObj._id,{$set : newWordObj},{useFindAndModify: false})
-        console.log("update successful")
+        let oldVal = await Word.findOneAndUpdate({_id : oldWordObj._id},{$set : newWordObj},{useFindAndModify: false})
+        console.log("update successful \n value changed to :- \n")
+        let words2 = await Word.find({"word" : wordObj.word})
+        let updatedWord = words2[0]
+        console.log(updatedWord)
 
     }catch(err){
         console.log(err)
     }
 }
 
-const handleNegativeResponse = async(wordObj)=>{
+var handleNegativeResponse = async(wordObj)=>{
     //take the word object , i++ , ciratio = c/i
     //update this object
     try{
-        words = await Word.find({"word" : wordObj.word})
-        oldWordObj = words[0]
-        newWordObj = {
+        let words = await Word.find({"word" : wordObj.word})
+        let oldWordObj = words[0]
+        let newWordObj = {
             word : oldWordObj.word,
             meaning : oldWordObj.meaning,
             correct : oldWordObj.correct  ,
             incorrect: oldWordObj.incorrect + 1,
             ciratio: oldWordObj.correct/ (oldWordObj.incorrect + 1)
         }
-        updatedWord = await Word.findByIdAndUpdate(oldWordObj._id,{$set : newWordObj},{useFindAndModify: false})
-        console.log("update successful")
+       let  oldval = await Word.findOneAndUpdate({_id : oldWordObj._id},{$set : newWordObj},{useFindAndModify: false})
+        console.log("update successful \n value changed to :- \n")
+        let words2 = await Word.find({"word" : wordObj.word})
+        let updatedWord = words2[0]
+        console.log(updatedWord)
 
     }catch(err){
         console.log(err)
@@ -68,13 +75,14 @@ const handleNegativeResponse = async(wordObj)=>{
 }
 
 
-app.post("/responseHandler",(req,res)=>{
-    console.log(req.body)
-    if(req.body.response === 1){
-        handlePositiveResponse(req.body.word)
-    }
-    if(req.body.response === 0){
-        handleNegativeResponse(req.body.word)
+app.post("/responseHandler",async(req,res)=>{
+    console.log(req.body.response)
+    if(req.body.response === "correct"){
+        await handlePositiveResponse(req.body.word)
+    }else if(req.body.response === "incorrect"){
+        await handleNegativeResponse(req.body.word)
+    }else{
+        console.log("invalid response")
     }
     res.json({status : "success"})
 });
@@ -83,8 +91,18 @@ app.post("/responseHandler",(req,res)=>{
 app.post("/getWords" , async (req,res)=>{
    try{
        console.log(req.body)
-       words = await Word.find({})
-       res.json(words)
+       let words = null
+       let minCiWord = await Word.find().sort({ciratio: 1}).limit(1)
+       let minciratio = minCiWord[0].ciratio
+       console.log(minciratio)
+       if(req.body.ciratio === null || req.body.ciratio === '' || req.body.ciratio < minciratio) {
+           words = await Word.find({})
+           res.json(words)
+       }else{
+           words = await Word.find({ciratio : {$lt : req.body.ciratio}})
+           console.log(words)
+           res.json(words)
+       }
    }catch(err){
        console.log(err)
    }
